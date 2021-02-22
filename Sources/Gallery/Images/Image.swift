@@ -14,7 +14,7 @@ public class Image: Equatable {
 }
 
 // MARK: - UIImage with metadata typealias
-public typealias UIImageData = (image: UIImage, metadata: CGImageMetadata)
+public typealias UIImageData = (image: UIImage, metadata: [String: Any])
 
 // MARK: - UIImage
 
@@ -39,12 +39,30 @@ extension Image {
       }
       CGImageDestinationAddImage(imageDestination, imageRef, nil)
       CGImageDestinationFinalize(imageDestination)
-      guard let imageMetadata = CGImageSourceCopyMetadataAtIndex(imageSource, 0, nil),
+      guard var imageMetadata = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any],
             let image = UIImage(data: destData as Data) else {
         return
       }
+      self.injectExifDate(to: &imageMetadata)
       completion(UIImageData(image, imageMetadata))
     }
+  }
+
+  private func injectExifDate(to imageMetadata: inout [String: Any]) {
+    guard var exif = imageMetadata[kCGImagePropertyExifDictionary as String] as? [String: Any],
+          let creationDate = asset.creationDate else {
+            return
+          }
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
+    if exif[kCGImagePropertyExifDateTimeOriginal as String] == nil {
+      exif[kCGImagePropertyExifDateTimeOriginal as String] = formatter.string(from: creationDate)
+    }
+
+    if exif[kCGImagePropertyExifDateTimeDigitized as String] == nil {
+      exif[kCGImagePropertyExifDateTimeDigitized as String] = formatter.string(from: creationDate)
+    }
+    imageMetadata[kCGImagePropertyExifDictionary as String] = exif
   }
 
   /// Resolve UIImage asynchronously
