@@ -13,7 +13,7 @@ class OrientationMan {
     
     let cmmotionManager = CMMotionManager()
     let operationQueue = OperationQueue()
-    var currentOrientation = AVCaptureVideoOrientation.portrait
+    var currentOrientation = Utils.videoOrientation()
     
     init() {
         operationQueue.maxConcurrentOperationCount = 1
