@@ -136,6 +136,14 @@ public struct Config {
     public static var portraitSize: CGSize = CGSize(width: 360, height: 640)
     public static var landscapeSize: CGSize = CGSize(width: 640, height: 360)
   }
+
+  public struct Text {
+    public static var doneButtonTitle = "Done"
+    public static var noImagesTitle = "No images available"
+    public static var settingsTitle = "Settings"
+    public static var requestPhotosAndCameraPermissionMessage = "Please, allow the application to access to your camera and photo library."
+    public static var requestPhotosPermissionMessage = "Please, allow the application to access to your photo library."
+  }
     
   public static var blacklistedAssetMediaSubtypes: [PHAssetMediaSubtype] = []
 }
