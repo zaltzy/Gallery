@@ -28,7 +28,10 @@ extension Image {
     let options = PHImageRequestOptions()
     options.isNetworkAccessAllowed = true
     options.deliveryMode = .highQualityFormat
-    PHImageManager.default().requestImageData(for: asset, options: options) { imageData, dataUTI, _, _ in
+    PHImageManager.default().requestImageData(
+        for: asset,
+        options: options
+    ) { imageData, dataUTI, orientation, _ in
       let destData = NSMutableData() as CFMutableData
       guard let imageData = imageData,
             let dataUTI = dataUTI,
@@ -40,10 +43,12 @@ extension Image {
       CGImageDestinationAddImage(imageDestination, imageRef, nil)
       CGImageDestinationFinalize(imageDestination)
       guard var imageMetadata = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any],
-            let image = UIImage(data: destData as Data) else {
+            let rotatedImage = UIImage(data: destData as Data),
+            let cgImage = rotatedImage.cgImage else {
         return
       }
       self.injectExifDate(to: &imageMetadata)
+      let image = UIImage(cgImage: cgImage, scale: rotatedImage.scale, orientation: orientation)
       completion(UIImageData(image, imageMetadata))
     }
   }
