@@ -18,17 +18,14 @@ struct Utils {
   }
 
   static func videoOrientation() -> AVCaptureVideoOrientation {
-    switch UIDevice.current.orientation {
-    case .portrait:
-      return .portrait
-    case .landscapeLeft:
-      return .landscapeRight
-    case .landscapeRight:
-      return .landscapeLeft
-    case .portraitUpsideDown:
-      return .portraitUpsideDown
-    default:
-      return .portrait
+    if UIDevice.current.userInterfaceIdiom == .phone {
+        return .portrait
+    } else {
+        switch UIApplication.shared.statusBarOrientation {
+        case .landscapeLeft: return .landscapeLeft
+        case .landscapeRight: return .landscapeRight
+        default: return .landscapeLeft
+        }
     }
   }
 
