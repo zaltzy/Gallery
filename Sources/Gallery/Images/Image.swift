@@ -31,7 +31,7 @@ extension Image {
     PHImageManager.default().requestImageData(
         for: asset,
         options: options
-    ) { imageData, dataUTI, orientation, _ in
+    ) { [weak self] imageData, dataUTI, orientation, _ in
       let destData = NSMutableData() as CFMutableData
       guard let imageData = imageData,
             let dataUTI = dataUTI,
@@ -47,7 +47,7 @@ extension Image {
             let cgImage = rotatedImage.cgImage else {
         return
       }
-      self.injectExifDate(to: &imageMetadata)
+      self?.injectExifDate(to: &imageMetadata)
       let image = UIImage(cgImage: cgImage, scale: rotatedImage.scale, orientation: orientation)
       completion(UIImageData(image, imageMetadata))
     }
