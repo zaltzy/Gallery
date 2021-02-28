@@ -36,7 +36,7 @@ struct Permission {
 
   struct Camera {
     static var needsPermission: Bool {
-        return status != .authorized
+      return Config.tabsToShow.firstIndex(of: .cameraTab) != nil
     }
 
     static var status: Status {
