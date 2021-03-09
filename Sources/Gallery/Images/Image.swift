@@ -48,8 +48,17 @@ extension Image {
         return
       }
       self?.injectExifDate(to: &imageMetadata)
-      let scaleFactor = scale ?? rotatedImage.scale
-      let image = UIImage(cgImage: cgImage, scale: scaleFactor, orientation: orientation)
+      var image = UIImage(cgImage: cgImage, scale: rotatedImage.scale, orientation: orientation)
+      if let scale = scale {
+          let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+          let rect = CGRect(origin: .zero, size: newSize)
+          UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+          image.draw(in: rect)
+          if let newImage = UIGraphicsGetImageFromCurrentImageContext() {
+            image = newImage
+          }
+          UIGraphicsEndImageContext()
+      }
       completion(UIImageData(image, imageMetadata))
     }
   }
