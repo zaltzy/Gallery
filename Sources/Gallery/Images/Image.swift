@@ -24,7 +24,7 @@ extension Image {
   /// - Parameters:
   ///   -  completion: A block to be called when the process is complete. The block takes the resolved UIImage and its CGImageMetadata
   ///    as parameters.
-  public func resolveImageData(completion: @escaping (UIImageData) -> Void) {
+  public func resolveImageData(scale: CGFloat? = nil, completion: @escaping (UIImageData) -> Void) {
     let options = PHImageRequestOptions()
     options.isNetworkAccessAllowed = true
     options.deliveryMode = .highQualityFormat
@@ -48,7 +48,8 @@ extension Image {
         return
       }
       self?.injectExifDate(to: &imageMetadata)
-      let image = UIImage(cgImage: cgImage, scale: rotatedImage.scale, orientation: orientation)
+      let scaleFactor = scale ?? rotatedImage.scale
+      let image = UIImage(cgImage: cgImage, scale: scaleFactor, orientation: orientation)
       completion(UIImageData(image, imageMetadata))
     }
   }
@@ -92,14 +93,14 @@ extension Image {
   ///   - images: The array of Images
   ///   -  completion: A block to be called when the process is complete. The block takes the array of resolved UIImages and their
   ///    CGImageMetadata as parameters.
-  public static func resolveImageData(images: [Image], completion: @escaping ([UIImageData]) -> Void) {
+  public static func resolveImageData(images: [Image], scale: CGFloat? = nil, completion: @escaping ([UIImageData]) -> Void) {
     let dispatchGroup = DispatchGroup()
     var convertedImages = [Int: UIImageData]()
 
     for (index, image) in images.enumerated() {
       dispatchGroup.enter()
 
-      image.resolveImageData(completion: { resolvedImage, metadata in
+    image.resolveImageData(scale: scale, completion: { resolvedImage, metadata in
         convertedImages[index] = (resolvedImage, metadata)
         dispatchGroup.leave()
       })
