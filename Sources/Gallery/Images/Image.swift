@@ -48,7 +48,7 @@ extension Image {
         return
       }
       self?.injectExifDate(to: &imageMetadata)
-      var image = UIImage(cgImage: cgImage, scale: rotatedImage.scale, orientation: orientation)
+        var image = UIImage(cgImage: cgImage, scale: rotatedImage.scale, orientation: .up)
       if let scale = scale {
           let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
           let rect = CGRect(origin: .zero, size: newSize)
