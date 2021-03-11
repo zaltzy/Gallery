@@ -43,12 +43,12 @@ extension Image {
       CGImageDestinationAddImage(imageDestination, imageRef, nil)
       CGImageDestinationFinalize(imageDestination)
       guard var imageMetadata = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any],
-            let rotatedImage = UIImage(data: destData as Data),
-            let cgImage = rotatedImage.cgImage else {
+            let generatedImage = UIImage(data: destData as Data),
+            let cgImage = generatedImage.cgImage else {
         return
       }
       self?.injectExifDate(to: &imageMetadata)
-        var image = UIImage(cgImage: cgImage, scale: rotatedImage.scale, orientation: .up)
+      var image = UIImage(cgImage: cgImage, scale: generatedImage.scale, orientation: orientation)
       if let scale = scale {
           let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
           let rect = CGRect(origin: .zero, size: newSize)
