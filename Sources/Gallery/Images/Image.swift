@@ -4,6 +4,10 @@ import Photos
 /// Wrap a PHAsset
 public class Image: Equatable {
 
+    public enum ImageError: Error {
+        case imageCreationFailed, imageResultIsInCloudKey
+    }
+
   public let asset: PHAsset
 
   // MARK: - Initialization
@@ -24,20 +28,21 @@ extension Image {
   /// - Parameters:
   ///   -  completion: A block to be called when the process is complete. The block takes the resolved UIImage and its CGImageMetadata
   ///    as parameters.
-  public func resolveImageData(scale: CGFloat? = nil, completion: @escaping (UIImageData) -> Void) {
+  public func resolveImageData(scale: CGFloat? = nil, completion: @escaping (Result<UIImageData, ImageError>) -> Void) {
     let options = PHImageRequestOptions()
     options.isNetworkAccessAllowed = true
     options.deliveryMode = .highQualityFormat
     PHImageManager.default().requestImageData(
         for: asset,
         options: options
-    ) { [weak self] imageData, dataUTI, orientation, _ in
+    ) { [weak self] imageData, dataUTI, orientation, info in
       let destData = NSMutableData() as CFMutableData
       guard let imageData = imageData,
             let dataUTI = dataUTI,
             let imageSource = CGImageSourceCreateWithData(imageData as CFData, nil),
             let imageDestination = CGImageDestinationCreateWithData(destData, dataUTI as CFString, 1, nil),
             let imageRef = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+        self?.completionWithError(info: info, completion: completion)
         return
       }
       CGImageDestinationAddImage(imageDestination, imageRef, nil)
@@ -45,6 +50,7 @@ extension Image {
       guard var imageMetadata = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any],
             let generatedImage = UIImage(data: destData as Data),
             let cgImage = generatedImage.cgImage else {
+        self?.completionWithError(info: info, completion: completion)
         return
       }
       self?.injectExifDate(to: &imageMetadata)
@@ -59,7 +65,15 @@ extension Image {
           }
           UIGraphicsEndImageContext()
       }
-      completion(UIImageData(image, imageMetadata))
+        completion(.success(UIImageData(image, imageMetadata)))
+    }
+  }
+
+  private func completionWithError(info: [AnyHashable : Any]?, completion: @escaping (Result<UIImageData, ImageError>) -> Void) {
+    if (info?[PHImageResultIsInCloudKey] as? NSNumber)?.boolValue == true {
+        completion(.failure(.imageResultIsInCloudKey))
+    } else {
+        completion(.failure(.imageCreationFailed))
     }
   }
 
@@ -102,17 +116,21 @@ extension Image {
   ///   - images: The array of Images
   ///   -  completion: A block to be called when the process is complete. The block takes the array of resolved UIImages and their
   ///    CGImageMetadata as parameters.
-  public static func resolveImageData(images: [Image], scale: CGFloat? = nil, completion: @escaping ([UIImageData]) -> Void) {
+  public static func resolveImageData(
+    images: [Image],
+    scale: CGFloat? = nil,
+    completion: @escaping ([Result<UIImageData, ImageError>]) -> Void
+  ) {
     let dispatchGroup = DispatchGroup()
-    var convertedImages = [Int: UIImageData]()
+    var convertedImages = [Int: Result<UIImageData, ImageError>]()
 
     for (index, image) in images.enumerated() {
       dispatchGroup.enter()
 
-    image.resolveImageData(scale: scale, completion: { resolvedImage, metadata in
-        convertedImages[index] = (resolvedImage, metadata)
-        dispatchGroup.leave()
-      })
+     image.resolveImageData(scale: scale) { result in
+         convertedImages[index] = result
+         dispatchGroup.leave()
+     }
     }
 
     dispatchGroup.notify(queue: .main, execute: {
